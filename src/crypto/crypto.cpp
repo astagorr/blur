@@ -48,11 +48,7 @@ namespace {
   static void local_abort(const char *msg)
   {
     fprintf(stderr, "%s\n", msg);
-#ifdef NDEBUG
-    _exit(1);
-#else
-    abort();
-#endif
+    abort(); // check if this should be an exit
   }
 }
 
@@ -255,7 +251,6 @@ namespace crypto {
     ge_p3 tmp3;
     ec_scalar k;
     s_comm buf;
-#if !defined(NDEBUG)
     {
       ge_p3 t;
       public_key t2;
@@ -264,7 +259,6 @@ namespace crypto {
       ge_p3_tobytes(&t2, &t);
       assert(pub == t2);
     }
-#endif
     buf.h = prefix_hash;
     buf.key = pub;
   try_again:
@@ -315,7 +309,6 @@ namespace crypto {
     if (ge_frombytes_vartime(&A_p3, &A) != 0) throw std::runtime_error("recipient view pubkey is invalid");
     if (B && ge_frombytes_vartime(&B_p3, &*B) != 0) throw std::runtime_error("recipient spend pubkey is invalid");
     if (ge_frombytes_vartime(&D_p3, &D) != 0) throw std::runtime_error("key derivation is invalid");
-#if !defined(NDEBUG)
     {
       assert(sc_check(&r) == 0);
       // check R == r*G or R == r*B
@@ -340,12 +333,10 @@ namespace crypto {
       ge_tobytes(&dbg_D, &dbg_D_p2);
       assert(D == dbg_D);
     }
-#endif
 
     // pick random k
     ec_scalar k;
     random_scalar(k);
-    
     s_comm_2 buf;
     buf.msg = prefix_hash;
     buf.D = D;
@@ -364,7 +355,6 @@ namespace crypto {
       ge_scalarmult_base(&X_p3, &k);
       ge_p3_tobytes(&buf.X, &X_p3);
     }
-    
     // compute Y = k*A
     ge_p2 Y_p2;
     ge_scalarmult(&Y_p2, &k, &A_p3);
@@ -509,7 +499,6 @@ POP_WARNINGS
     if (!buf)
       local_abort("malloc failure");
     assert(sec_index < pubs_count);
-#if !defined(NDEBUG)
     {
       ge_p3 t;
       public_key t2;
@@ -524,7 +513,6 @@ POP_WARNINGS
         assert(check_key(*pubs[i]));
       }
     }
-#endif
     if (ge_frombytes_vartime(&image_unp, &image) != 0) {
       local_abort("invalid key image");
     }
@@ -570,11 +558,9 @@ POP_WARNINGS
     boost::shared_ptr<rs_comm> buf(reinterpret_cast<rs_comm *>(malloc(rs_comm_size(pubs_count))), free);
     if (!buf)
       return false;
-#if !defined(NDEBUG)
     for (i = 0; i < pubs_count; i++) {
       assert(check_key(*pubs[i]));
     }
-#endif
     if (ge_frombytes_vartime(&image_unp, &image) != 0) {
       return false;
     }
